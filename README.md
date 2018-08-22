@@ -2,6 +2,7 @@ eg - simple event generator
 
 Usage:
 ```console
+eg --help
 eg [[<host>] [<DateTime {yyyy-mm-dd}> or now] [<interval>] [<type: int or double>] [<minValue>] [<maxValue>]]
 ```
     
