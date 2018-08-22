@@ -39,7 +39,7 @@ fun getInt(args: Array<String>, index: Int = 2, defaultValue: Int = 5): Int {
         return defaultValue
     }
 
-    return args[index].toIntOrNull()?:defaultValue
+    return args[index].toIntOrNull() ?: defaultValue
 }
 
 fun getDouble(args: Array<String>, index: Int = 3, defaultValue: Double = 0.0): Double {
@@ -47,7 +47,7 @@ fun getDouble(args: Array<String>, index: Int = 3, defaultValue: Double = 0.0): 
         return defaultValue
     }
 
-    return args[index].toDoubleOrNull()?:defaultValue
+    return args[index].toDoubleOrNull() ?: defaultValue
 }
 
 fun getType(args: Array<String>, index: Int = 4, defaultValue: String = "double"): String {
@@ -69,7 +69,7 @@ fun getType(args: Array<String>, index: Int = 4, defaultValue: String = "double"
 fun activity(hours: Double): Double {
     return (1.0 / (1.0 + Math.pow(9.0 - hours, 2.0))
             + 1.0 / (1.0 + Math.pow(12.0 - hours, 2.0))
-            + 1.0 / (1.0 + Math.pow(17.0 - hours, 2.0)))*0.8777
+            + 1.0 / (1.0 + Math.pow(17.0 - hours, 2.0))) * 0.877976
 }
 
 fun LocalDateTime.hours(): Double {
@@ -84,6 +84,9 @@ fun printUsage() {
     println("eg localhost 2018-08-11 1 double 500.0 2000.0")
 }
 
+const val NUMBER_OF_MINUTES_IN_A_DAY = 1440
+const val NUMBER_OF_PARTITIONS = 1000
+
 fun main(args: Array<String>) {
     //println(args.toList())
     Locale.setDefault(Locale.US)
@@ -97,17 +100,15 @@ fun main(args: Array<String>) {
     val host = getHost(args, 0)
     val dateTime = getDateTime(args, 1)
     val interval = getInt(args, 2, 5)
-
     val type = getType(args, 3)
-
     val minValue = getDouble(args, 4, 0.0)
     val maxValue = getDouble(args, 5, 100.0)
 
     val r = Random(System.currentTimeMillis())
     println("host, timestamp, value")
-    for (i in 0..1439 step interval) {
+    for (i in 0 until NUMBER_OF_MINUTES_IN_A_DAY step interval) {
         val newDateTime = dateTime.plusMinutes(i.toLong())
-        val newRandomValue = (maxValue - minValue) * r.nextInt(1001).toDouble() / 1000.0
+        val newRandomValue = (maxValue - minValue) * r.nextInt(NUMBER_OF_PARTITIONS + 1).toDouble() / NUMBER_OF_PARTITIONS.toDouble()
         val newValue = activity(newDateTime.hours()) * newRandomValue + minValue
 
         if (type == "double") {
