@@ -1,0 +1,17 @@
+[
+  {
+    "kpi": "hpsm-1",
+    "value1": 0,
+  "value2": 30
+  },
+  {
+    "kpi": "internet-rub",
+    "value1": 100000,
+  "value2": 300000
+  },
+  {
+    "kpi": "lte-users",
+    "value1": 1000,
+  "value2": 3000
+  }
+]

@@ -125,16 +125,15 @@ fun generateBySample(sampleFileName: String) {
         }
     }
 
-    print("${now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)},")
+    print("""{"time": "${now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)}", """)
     val kpis = sampleRecordsArray.stream().map { r: SampleRecord ->
         val newRandomValue = (r.value2 - r.value1) *
                 random.nextInt(NUMBER_OF_PARTITIONS + 1).toDouble() / NUMBER_OF_PARTITIONS.toDouble()
         val newValue = activity(now.hours()) * newRandomValue + r.value1
 
-        return@map newValue.roundToInt().toString(10)
-    }.collect(Collectors.joining(","))
-
-    println(kpis)
+        return@map """"${r.kpi}": ${newValue.roundToInt()}"""
+    }.collect(Collectors.joining(", "))
+    println("""$kpis}""")
 }
 
 fun generate(args: Array<String>) {
