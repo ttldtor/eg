@@ -3,10 +3,11 @@ plugins {
 }
 
 group 'ttldtor'
-version '1.0'
+version '1.1'
 
 repositories {
     mavenCentral()
+    jcenter()
 }
 
 apply plugin: 'application'
@@ -15,6 +16,7 @@ mainClassName = 'ttldtor.AppKt'
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation 'com.beust:klaxon:3.0.1'
 }
 
 compileKotlin {

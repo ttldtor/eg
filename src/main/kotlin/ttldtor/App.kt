@@ -1,10 +1,14 @@
 package ttldtor
 
+import com.beust.klaxon.JsonReader
+import com.beust.klaxon.Klaxon
+import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.stream.Collectors
 import kotlin.math.roundToInt
 import kotlin.ranges.*
 
@@ -78,25 +82,63 @@ fun LocalDateTime.hours(): Double {
 
 fun printUsage() {
     println("Usage:")
+    println("eg --help")
+    println("eg --sample <sample file name>")
     println("eg [[<host>] [<DateTime {yyyy-mm-dd}> or now] [<interval>] [<type: int or double>] [<minValue>] [<maxValue>]]")
     println("Examples:")
     println("eg localhost now 5 int 0 5")
     println("eg localhost 2018-08-11 1 double 500.0 2000.0")
+    println("eg --sample ./1.sample")
 }
 
+data class SampleRecord(val kpi: String, val value1: Int, val value2: Int)
+
 const val NUMBER_OF_MINUTES_IN_A_DAY = 1440
-const val NUMBER_OF_PARTITIONS = 1000
+const val NUMBER_OF_PARTITIONS = NUMBER_OF_MINUTES_IN_A_DAY * 2
 
-fun main(args: Array<String>) {
-    //println(args.toList())
-    Locale.setDefault(Locale.US)
+fun generateBySample(sampleFileName: String) {
+    val random = Random(System.currentTimeMillis())
+    val now = LocalDateTime.now()
 
-    if (args.isNotEmpty() && args[0] == "--help") {
-        printUsage()
+    val f = File(sampleFileName)
+
+    if (!f.exists()) {
+        System.err.println("File '$sampleFileName' not found")
 
         return
     }
 
+    if (f.isDirectory) {
+        System.err.println("'$sampleFileName' - directory")
+
+        return
+    }
+
+    val klaxon = Klaxon()
+    val sampleRecordsArray = arrayListOf<SampleRecord>()
+
+    JsonReader(f.reader()).use { reader ->
+        reader.beginArray {
+            while (reader.hasNext()) {
+                sampleRecordsArray.add(klaxon.parse<SampleRecord>(reader)!!)
+            }
+        }
+    }
+
+    print("${now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)},")
+    val kpis = sampleRecordsArray.stream().map { r: SampleRecord ->
+        val newRandomValue = (r.value2 - r.value1) *
+                random.nextInt(NUMBER_OF_PARTITIONS + 1).toDouble() / NUMBER_OF_PARTITIONS.toDouble()
+        val newValue = activity(now.hours()) * newRandomValue + r.value1
+
+        return@map newValue.roundToInt().toString(10)
+    }.collect(Collectors.joining(","))
+
+    println(kpis)
+}
+
+fun generate(args: Array<String>) {
+    val r = Random(System.currentTimeMillis())
     val host = getHost(args, 0)
     val dateTime = getDateTime(args, 1)
     val interval = getInt(args, 2, 5)
@@ -104,11 +146,11 @@ fun main(args: Array<String>) {
     val minValue = getDouble(args, 4, 0.0)
     val maxValue = getDouble(args, 5, 100.0)
 
-    val r = Random(System.currentTimeMillis())
     println("host, timestamp, value")
     for (i in 0 until NUMBER_OF_MINUTES_IN_A_DAY step interval) {
         val newDateTime = dateTime.plusMinutes(i.toLong())
-        val newRandomValue = (maxValue - minValue) * r.nextInt(NUMBER_OF_PARTITIONS + 1).toDouble() / NUMBER_OF_PARTITIONS.toDouble()
+        val newRandomValue = (maxValue - minValue) *
+                r.nextInt(NUMBER_OF_PARTITIONS + 1).toDouble() / NUMBER_OF_PARTITIONS.toDouble()
         val newValue = activity(newDateTime.hours()) * newRandomValue + minValue
 
         if (type == "double") {
@@ -122,5 +164,36 @@ fun main(args: Array<String>) {
                     newDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                     newValue.roundToInt()))
         }
+    }
+}
+
+fun main(args: Array<String>) {
+    //println(args.toList())
+    Locale.setDefault(Locale.US)
+
+    if (args.isEmpty()) {
+        printUsage()
+
+        return
+    }
+
+    if (args[0] == "--help") {
+        printUsage()
+
+        return
+    }
+
+    if (args[0] == "--sample") {
+        if (args.size != 2) {
+            printUsage()
+
+            return
+        }
+
+        generateBySample(args[1])
+
+        return
+    } else {
+        generate(args)
     }
 }
