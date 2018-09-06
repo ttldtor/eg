@@ -85,3 +85,8 @@ Sample File Format 2:
   }
 ]
 ```
+
+Output Format:
+```json
+{"time": "2018-09-07T01:01:12.0714295", "hpsm-1": 2, "internet-rub": 120825, "lte-users": 1155}
+```
