@@ -1,79 +1,77 @@
 package ttldtor
 
-import com.beust.klaxon.JsonReader
 import com.beust.klaxon.Klaxon
 import java.io.File
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.stream.Collectors
 import kotlin.math.roundToInt
-import kotlin.ranges.*
 
-fun getHost(args: Array<String>, index: Int = 0, defaultValue: String = "localhost"): String {
-    if (args.size < index + 1) {
-        return defaultValue
-    }
+data class ActivityRecord(val time: String, val coeff: Double)
 
-    return args[index]
-}
-
-fun getDateTime(args: Array<String>, index: Int = 1): LocalDateTime {
-    val now = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0)
-
-    if (args.size < index + 1) {
-        return now
-    }
-
-    if (args[1] == "now") {
-        return now
-    }
-
-    return try {
-        LocalDateTime.of(LocalDate.parse(args[index], DateTimeFormatter.ISO_LOCAL_DATE), LocalTime.MIN)
-    } catch (e: RuntimeException) {
-        now
-    }
-}
-
-fun getInt(args: Array<String>, index: Int = 2, defaultValue: Int = 5): Int {
-    if (args.size < index + 1) {
-        return defaultValue
-    }
-
-    return args[index].toIntOrNull() ?: defaultValue
-}
-
-fun getDouble(args: Array<String>, index: Int = 3, defaultValue: Double = 0.0): Double {
-    if (args.size < index + 1) {
-        return defaultValue
-    }
-
-    return args[index].toDoubleOrNull() ?: defaultValue
-}
-
-fun getType(args: Array<String>, index: Int = 4, defaultValue: String = "double"): String {
-    if (args.size < index + 1) {
-        return defaultValue
-    }
-
-    val possibleValues = setOf("int", "double")
-
-    val arg = args[index]
-
-    if (possibleValues.contains(arg)) {
-        return arg
-    }
-
-    return defaultValue
-}
+data class SampleRecord(val kpi: String, val value1: Int, val value2: Int, val activity: Map<String, Double>?)
 
 fun activity(hours: Double): Double {
     return (1.0 / (1.0 + Math.pow(9.0 - hours, 2.0))
             + 1.0 / (1.0 + Math.pow(12.0 - hours, 2.0))
             + 1.0 / (1.0 + Math.pow(17.0 - hours, 2.0))) * 0.877976
+}
+
+fun String.toMinutes(): Int {
+    val parts = this.split(':')
+
+    val h = parts[0].toInt(10)
+    val m = parts[1].toInt(10)
+
+    return h + 60 * m
+}
+
+fun String.toHours(): Double {
+    val parts = this.split(':')
+
+    val h = parts[0].toInt(10).toDouble()
+    val m = parts[1].toInt(10).toDouble()
+
+    return h + m / 60.0
+}
+
+fun List<ActivityRecord>.appendLeftBound(): List<ActivityRecord> {
+    if (this.first().time == "00:00") {
+        return this
+    }
+
+    return listOf(ActivityRecord("00:00", 0.0)) + this
+}
+
+fun List<ActivityRecord>.appendRightBound(): List<ActivityRecord> {
+    if (this.first().time == "24:00") {
+        return this
+    }
+
+    return this + ActivityRecord("24:00", 0.0)
+}
+
+fun activity(hours: Double, activityRecords: List<ActivityRecord>?): Double {
+    if (activityRecords == null || activityRecords.isEmpty()) {
+        return 1.0
+    }
+
+    val sorted = activityRecords.sortedWith(compareBy { it.time.toMinutes() }).appendLeftBound().appendRightBound()
+
+    val idx = sorted.binarySearchBy(hours) { it.time.toHours() }
+
+    if (idx >= 0) {
+        return sorted[idx].coeff
+    }
+
+    val to = -(idx + 1)
+    val from = to - 1
+
+//    println("$hours $idx $from - $to")
+
+    return (hours - sorted[from].time.toHours()) * (sorted[to].coeff - sorted[from].coeff) /
+            (sorted[to].time.toHours() - sorted[from].time.toHours()) + sorted[from].coeff
 }
 
 fun LocalDateTime.hours(): Double {
@@ -84,14 +82,7 @@ fun printUsage() {
     println("Usage:")
     println("eg --help")
     println("eg --sample <sample file name>")
-    println("eg [[<host>] [<DateTime {yyyy-mm-dd}> or now] [<interval>] [<type: int or double>] [<minValue>] [<maxValue>]]")
-    println("Examples:")
-    println("eg localhost now 5 int 0 5")
-    println("eg localhost 2018-08-11 1 double 500.0 2000.0")
-    println("eg --sample ./1.sample")
 }
-
-data class SampleRecord(val kpi: String, val value1: Int, val value2: Int)
 
 const val NUMBER_OF_MINUTES_IN_A_DAY = 1440
 const val NUMBER_OF_PARTITIONS = NUMBER_OF_MINUTES_IN_A_DAY * 2
@@ -115,55 +106,21 @@ fun generateBySample(sampleFileName: String) {
     }
 
     val klaxon = Klaxon()
-    val sampleRecordsArray = arrayListOf<SampleRecord>()
 
-    JsonReader(f.reader()).use { reader ->
-        reader.beginArray {
-            while (reader.hasNext()) {
-                sampleRecordsArray.add(klaxon.parse<SampleRecord>(reader)!!)
-            }
-        }
-    }
+    val sampleRecordsArray = klaxon.parseArray<SampleRecord>(f.readText()) ?: return
+    val hasActivityFields = sampleRecordsArray.stream().anyMatch { it.activity != null }
 
     print("""{"time": "${now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)}", """)
     val kpis = sampleRecordsArray.stream().map { r: SampleRecord ->
         val newRandomValue = (r.value2 - r.value1) *
                 random.nextInt(NUMBER_OF_PARTITIONS + 1).toDouble() / NUMBER_OF_PARTITIONS.toDouble()
-        val newValue = activity(now.hours()) * newRandomValue + r.value1
+        val activityCoeff = if (!hasActivityFields) activity(now.hours()) else
+            activity(now.hours(), r.activity!!.entries.map { ActivityRecord(it.key, it.value) })
+        val newValue = activityCoeff * newRandomValue + r.value1
 
         return@map """"${r.kpi}": ${newValue.roundToInt()}"""
     }.collect(Collectors.joining(", "))
     println("""$kpis}""")
-}
-
-fun generate(args: Array<String>) {
-    val r = Random(System.currentTimeMillis())
-    val host = getHost(args, 0)
-    val dateTime = getDateTime(args, 1)
-    val interval = getInt(args, 2, 5)
-    val type = getType(args, 3)
-    val minValue = getDouble(args, 4, 0.0)
-    val maxValue = getDouble(args, 5, 100.0)
-
-    println("host, timestamp, value")
-    for (i in 0 until NUMBER_OF_MINUTES_IN_A_DAY step interval) {
-        val newDateTime = dateTime.plusMinutes(i.toLong())
-        val newRandomValue = (maxValue - minValue) *
-                r.nextInt(NUMBER_OF_PARTITIONS + 1).toDouble() / NUMBER_OF_PARTITIONS.toDouble()
-        val newValue = activity(newDateTime.hours()) * newRandomValue + minValue
-
-        if (type == "double") {
-            println("%s, %s, %.2f".format(
-                    host,
-                    newDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                    newValue))
-        } else {
-            println("%s, %s, %d".format(
-                    host,
-                    newDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                    newValue.roundToInt()))
-        }
-    }
 }
 
 fun main(args: Array<String>) {
@@ -192,7 +149,7 @@ fun main(args: Array<String>) {
         generateBySample(args[1])
 
         return
-    } else {
-        generate(args)
     }
+
+    printUsage()
 }
