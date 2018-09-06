@@ -2,18 +2,18 @@ eg - simple event generator
 --
 Generates random kpi values by current time
 
-Usage:
+####Usage:
 ```console
 eg --help
 eg --sample <sample file name>
 ```
     
-Examples:
+####Examples:
 ```console
 eg --sample ./1.sample
 ```
 
-Sample File Format (activity by formula):
+####Sample File Format (activity by formula):
 ```json
 [
   {
@@ -33,14 +33,14 @@ Sample File Format (activity by formula):
   }
  ]
 ```
-Activity formula:
+#####Activity formula:
 ```
 A = 0.877976 * (1 / (1 + (9 - hours) ^ 2) + 1 / (1 + (12 - hours) ^ 2) + 1 / (1 + (17 - hours) ^ 2))
 hours = [0 .. 24) -- current hours
 ```
 [Wolfram](https://bit.ly/2wPdRjj)
 
-Sample File Format 2 (activity coefficients):
+####Sample File Format 2 (activity coefficients):
 ```json
 [
   {
@@ -94,7 +94,7 @@ Sample File Format 2 (activity coefficients):
 ]
 ```
 
-Output Format:
+####Output Format:
 ```json
 {"time": "2018-09-07T01:01:12.0714295", "hpsm-1": 2, "internet-rub": 120825, "lte-users": 1155}
 ```
