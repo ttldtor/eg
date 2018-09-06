@@ -35,10 +35,10 @@ Sample File Format (activity by formula):
 ```
 Activity formula:
 ```
-A = 0.877976 * (1 / (1 + (9 - hours) ^ 2)) + 1 / (1 + (12 - hours) ^ 2)) + 1 / (1 + (17 - hours) ^ 2)))
+A = 0.877976 * (1 / (1 + (9 - hours) ^ 2) + 1 / (1 + (12 - hours) ^ 2) + 1 / (1 + (17 - hours) ^ 2))
 hours = [0 .. 24) -- current hours
 ```
-
+[Wolfram](https://bit.ly/2wPdRjj)
 
 Sample File Format 2 (activity coefficients):
 ```json
