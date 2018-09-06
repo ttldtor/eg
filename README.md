@@ -1,4 +1,6 @@
 eg - simple event generator
+--
+Generates random kpi values by current time
 
 Usage:
 ```console
@@ -34,7 +36,7 @@ Sample File Format (activity by formula):
 Activity formula:
 ```
 A = 0.877976 * (1 / (1 + (9 - hours) ^ 2)) + 1 / (1 + (12 - hours) ^ 2)) + 1 / (1 + (17 - hours) ^ 2)))
-hours = [0 .. 24)
+hours = [0 .. 24) -- current hours
 ```
 
 
