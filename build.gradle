@@ -3,7 +3,7 @@ plugins {
 }
 
 group 'ttldtor'
-version '1.2.0'
+version '1.2.1'
 
 repositories {
     mavenCentral()
@@ -11,12 +11,23 @@ repositories {
 }
 
 apply plugin: 'application'
+apply plugin: 'kotlin-kapt'
 
 mainClassName = 'ttldtor.AppKt'
 
+def klaxonVersion = "3.0.1"
+def arrowVersion = "0.7.3"
+
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation 'com.beust:klaxon:3.0.1'
+    implementation "com.beust:klaxon:$klaxonVersion"
+    compile "io.arrow-kt:arrow-core:$arrowVersion"
+    compile "io.arrow-kt:arrow-syntax:$arrowVersion"
+    compile "io.arrow-kt:arrow-typeclasses:$arrowVersion"
+    compile "io.arrow-kt:arrow-data:$arrowVersion"
+    compile "io.arrow-kt:arrow-instances-core:$arrowVersion"
+    compile "io.arrow-kt:arrow-instances-data:$arrowVersion"
+    kapt "io.arrow-kt:arrow-annotations-processor:$arrowVersion"
 }
 
 compileKotlin {
