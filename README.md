@@ -40,6 +40,8 @@ hours = [0 .. 24) -- current hours
 ```
 [Wolfram](https://bit.ly/2wPdRjj)
 
+![Graph](https://user-images.githubusercontent.com/3264871/210156374-26643b91-3b00-4293-846e-4b89f48d2600.png)
+
 #### Sample File Format 2 (activity coefficients):
 ```json
 [
