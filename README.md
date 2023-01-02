@@ -42,6 +42,16 @@ hours = [0 .. 24) -- current hours
 
 ![Graph](https://user-images.githubusercontent.com/3264871/210156374-26643b91-3b00-4293-846e-4b89f48d2600.png)
 
+##### Common activity formula:
+
+```math
+\displaylines{F(x, \textbf{b}) = \displaystyle\sum_{1 \leq i \leq n} \frac{1}{1 + (\textbf{b}_{i} + x^2) }\\
+\textbf{b}_{i} < \textbf{b}_{i + 1}, (i = 1, \dotsc , n - 1)\\
+C(\textbf{b}) = \frac{1}{\displaystyle\max_{1 \leq i \leq n} F(\textbf{b}_{i}, \textbf{b})}\\
+A(x, \textbf{b}) = C(\textbf{b}) F(x, \textbf{b})}
+```
+**b** - activity hours
+
 #### Sample File Format 2 (activity coefficients):
 ```json
 [
